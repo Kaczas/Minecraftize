@@ -36,8 +36,7 @@ namespace Minecraftize {
 
     public MainWindowVM() {
       DataManager.WriteFileIfEmpty();
-      _minecraftizer = new Minecraftizer();
-      ColorManager.CreateLists();
+      _minecraftizer = new Minecraftizer(ColorManager.Initialize());
       Bitmap bm = new Bitmap("res/drop.png");
       this.ImageWidth = 600;
       this.ImageHeight = 300;
