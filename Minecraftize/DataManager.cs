@@ -26,10 +26,10 @@ namespace Minecraftize
                     l.Add(new List<string>());
                     l[x].Add(dir[x]);
                     Bitmap b = new Bitmap(dir[x].ToString());
-                    Color c = ColorManager.GetAverageColor(b);
-                    l[x].Add(c.R.ToString());
-                    l[x].Add(c.G.ToString());
-                    l[x].Add(c.B.ToString());
+                    //Color c = ColorManager.GetAverageColor(b);
+                    //l[x].Add(c.R.ToString());
+                    //l[x].Add(c.G.ToString());
+                    //l[x].Add(c.B.ToString());
                 }
                 DataManager.Write(l);
             }
