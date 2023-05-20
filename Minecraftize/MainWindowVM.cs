@@ -13,17 +13,19 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 namespace Minecraftize {
   public class MainWindowVM : ViewModel {
+
     private Bitmap _image;
     private Minecraftizer _minecraftizer;
     private bool _buttonEnabled;
     private bool _saveButtonEnabled;
-    string _dir;
-    Bitmap _minecraftizedImage;
-    ImageSource _imagePanel;
+    private string _dir;
+    private Bitmap _minecraftizedImage;
+    private ImageSource _imagePanel;
     private int _value;
     private int _imageWidth;
     private int _imageHeight;
     private List<int> _sizes;
+
     public int Value { get { return _value; } set { _value = value; OnPropertyChanged(nameof(Value)); } }
     public int ImageWidth { get { return _imageWidth; } set { _imageWidth = value; OnPropertyChanged(nameof(ImageWidth)); } }
     public int ImageHeight { get { return _imageHeight; } set { _imageHeight = value; OnPropertyChanged(nameof(ImageHeight)); } }

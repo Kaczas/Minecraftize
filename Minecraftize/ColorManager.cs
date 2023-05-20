@@ -39,7 +39,7 @@ namespace Minecraftize {
 
     }
 
-    public Bitmap GetBitmapFromAverageColor(FastBitmap source) {
+    public Bitmap MinecraftizeBitmap(FastBitmap source) {
       var color = GetAverageColor(source);
       var iconIndex = FindClosestColorIndex(color);
       var bitmap = GetBitmapByIndex(iconIndex, source.Width, source.Height);
