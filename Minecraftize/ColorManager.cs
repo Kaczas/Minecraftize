@@ -1,5 +1,6 @@
 ﻿using Hazdryx.Drawing;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -11,7 +12,7 @@ namespace Minecraftize {
 
     private readonly Color[] _colors;
     private readonly Image[] _icons;
-    private readonly Dictionary<Color, int> _closestColorsCache;
+    private readonly ConcurrentDictionary<Color, int> _closestColorsCache;
 
     private ColorManager(IEnumerable<Color> colors, IEnumerable<Image> icons) {
       _colors = colors.ToArray();
@@ -78,8 +79,10 @@ namespace Minecraftize {
 
     private Bitmap GetBitmapByIndex(int index, int width, int height) {
       var img = _icons[index];
-      var bitmap = new Bitmap(img, new Size(width, height));
-      return bitmap;
+      lock (img) {
+        var bitmap = new Bitmap(img, new Size(width, height));
+        return bitmap;
+      }
     }
 
     private int FindClosestColorIndex(Color targetColor) {
@@ -97,7 +100,7 @@ namespace Minecraftize {
         }
       }
 
-      _closestColorsCache.Add(targetColor, closestColorIndex);
+      _closestColorsCache.TryAdd(targetColor, closestColorIndex);
 
       return closestColorIndex;
 

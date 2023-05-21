@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -51,8 +52,8 @@ namespace Minecraftize {
       this.ImageSource = imgSource;
     }
 
-    private void MinecraftizeClick(object? _) {
-      _minecraftizedImage = _minecraftizer.Minecraftize(_loadedImage!, _sliderValue);
+    private async void MinecraftizeClick(object? _) {
+      _minecraftizedImage = await _minecraftizer.Minecraftize(_loadedImage!, _sliderValue);
       UpdateImage(_minecraftizedImage);
     }
 
