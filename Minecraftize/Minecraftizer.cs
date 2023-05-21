@@ -21,9 +21,9 @@ namespace Minecraftize {
 
     private FastBitmap _squareBitmap;
 
-    public Minecraftizer(ColorManager colorManager) {
+    public Minecraftizer() {
 
-      _colorManager = colorManager;
+      _colorManager = new ColorManager();
 
     }
 
@@ -34,16 +34,16 @@ namespace Minecraftize {
 #endif
 
       _squareSize = squareSize;
-      _squareBitmap = new FastBitmap(squareSize, squareSize);
       _horizontalSquaresCount = sourceBitmap.Width / squareSize;
       _verticalSquaresCount = sourceBitmap.Height / squareSize;
 
+      _squareBitmap = new FastBitmap(squareSize, squareSize);
       _fastSourceBitmap = new FastBitmap(sourceBitmap);
       _finalImage = new FastBitmap(sourceBitmap.Width, sourceBitmap.Height);
 
       await Parallel.ForEachAsync(
         Partitioner.Create(0, _verticalSquaresCount * _horizontalSquaresCount, 1_000_000).GetDynamicPartitions(),
-        new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+        new ParallelOptions { MaxDegreeOfParallelism = 2 },
         MinecraftizeAsync
         );
 
@@ -53,6 +53,7 @@ namespace Minecraftize {
 #endif
 
       _squareBitmap.Dispose();
+      _fastSourceBitmap.Dispose();
 
       return _finalImage.BaseBitmap;
 
@@ -67,12 +68,9 @@ namespace Minecraftize {
 
         _fastSourceBitmap.CopyTo(_squareBitmap, x, y, _squareSize, _squareSize);
 
-        var avgBitmap = _colorManager.MinecraftizeBitmap(_squareBitmap);
+        _colorManager.DrawIconOnBitmap(_squareBitmap);
 
-        WriteIconOnFinalImage(avgBitmap, x, y);
-
-        //using var icon = new FastBitmap(avgBitmap);
-        //icon.CopyTo(_finalImage, x, y, 0, 0, _squareSize, _squareSize);
+        WriteIconOnFinalImage(_squareBitmap.BaseBitmap, x, y);
 
       }
 
@@ -82,34 +80,35 @@ namespace Minecraftize {
 
     private async void WriteIconOnFinalImage(Bitmap icon, int x, int y) {
 
-      BitmapData bmpData = icon.LockBits(new Rectangle(0, 0, icon.Width, icon.Height),
-                                         ImageLockMode.ReadOnly,
-                                         icon.PixelFormat);
+      lock (icon) {
 
-      IntPtr ptr = bmpData.Scan0;
-      int bytesPerPixel = Image.GetPixelFormatSize(icon.PixelFormat) / 8;
-      int stride = bmpData.Stride;
-      int width = icon.Width;
-      int height = icon.Height;
+        BitmapData bmpData = icon.LockBits(new Rectangle(0, 0, icon.Width, icon.Height),
+                                           ImageLockMode.ReadOnly,
+                                           icon.PixelFormat);
 
-      unsafe {
-        for (int iconY = 0; iconY < height; iconY++) {
-          byte* row = (byte*)ptr + (iconY * stride);
-          for (int iconX = 0; iconX < width; iconX++) {
-            byte* pixel = row + (iconX * bytesPerPixel);
-            byte blue = pixel[0];
-            byte green = pixel[1];
-            byte red = pixel[2];
-            byte alpha = bytesPerPixel == 4 ? pixel[3] : (byte)255;
-            var color = Color.FromArgb(red, green, blue);
-            _finalImage.Set(x + iconX, y + iconY, color);
+        IntPtr ptr = bmpData.Scan0;
+        int bytesPerPixel = Image.GetPixelFormatSize(icon.PixelFormat) / 8;
+        int stride = bmpData.Stride;
+        int width = icon.Width;
+        int height = icon.Height;
+
+        unsafe {
+          for (int iconY = 0; iconY < height; iconY++) {
+            byte* row = (byte*)ptr + (iconY * stride);
+            for (int iconX = 0; iconX < width; iconX++) {
+              byte* pixel = row + (iconX * bytesPerPixel);
+              byte blue = pixel[0];
+              byte green = pixel[1];
+              byte red = pixel[2];
+              var color = Color.FromArgb(red, green, blue);
+              _finalImage.Set(x + iconX, y + iconY, color);
+            }
           }
         }
+
+        icon.UnlockBits(bmpData);
+
       }
-
-      icon.UnlockBits(bmpData);
-
-      icon.Dispose();
 
     }
 
