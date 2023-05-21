@@ -46,6 +46,36 @@ namespace Minecraftize {
       return bitmap;
     }
 
+    public static Color GetAverageColor(FastBitmap bm) {
+
+      int width = bm.Width;
+      int height = bm.Height;
+
+      long redSum = 0;
+      long greenSum = 0;
+      long blueSum = 0;
+
+      var buffer = new int[width * height];
+
+      bm.Read(buffer);
+
+      foreach (var argb in buffer) {
+        redSum += (argb & 0x00FF0000L) >> 16;
+        greenSum += (argb & 0x0000FF00L) >> 8;
+        blueSum += (argb & 0x000000FFL);
+      }
+
+      int totalPixels = width * height;
+
+      byte redAverage = (byte)(redSum / totalPixels);
+      byte greenAverage = (byte)(greenSum / totalPixels);
+      byte blueAverage = (byte)(blueSum / totalPixels);
+
+      Color c = Color.FromArgb(redAverage, greenAverage, blueAverage);
+      return c;
+
+    }
+
     private Bitmap GetBitmapByIndex(int index, int width, int height) {
       var img = _icons[index];
       var bitmap = new Bitmap(img, new Size(width, height));
@@ -78,36 +108,6 @@ namespace Minecraftize {
       int gDiff = color1.G - color2.G;
       int bDiff = color1.B - color2.B;
       return (rDiff * rDiff) + (gDiff * gDiff) + (bDiff * bDiff);
-    }
-
-    private Color GetAverageColor(FastBitmap bm) {
-
-      int width = bm.Width;
-      int height = bm.Height;
-
-      long redSum = 0;
-      long greenSum = 0;
-      long blueSum = 0;
-
-      var buffer = new int[width * height];
-
-      bm.Read(buffer);
-
-      foreach (var argb in buffer) {
-        redSum += (argb & 0x00FF0000L) >> 16;
-        greenSum += (argb & 0x0000FF00L) >> 8;
-        blueSum += (argb & 0x000000FFL);
-      }
-
-      int totalPixels = width * height;
-
-      byte redAverage = (byte)(redSum / totalPixels);
-      byte greenAverage = (byte)(greenSum / totalPixels);
-      byte blueAverage = (byte)(blueSum / totalPixels);
-
-      Color c = Color.FromArgb(redAverage, greenAverage, blueAverage);
-      return c;
-
     }
 
   }
