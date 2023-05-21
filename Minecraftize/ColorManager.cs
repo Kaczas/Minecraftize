@@ -72,8 +72,9 @@ namespace Minecraftize {
       byte greenAverage = (byte)(greenSum / totalPixels);
       byte blueAverage = (byte)(blueSum / totalPixels);
 
-      Color c = Color.FromArgb(redAverage, greenAverage, blueAverage);
-      return c;
+      Color color = Color.FromArgb(redAverage, greenAverage, blueAverage);
+
+      return color;
 
     }
 

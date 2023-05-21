@@ -41,6 +41,7 @@ namespace Minecraftize {
     }
 
     public void Image_FileDrop(FileInfo file) {
+      _loadedImage?.Dispose();
       _loadedImage = (Bitmap)Bitmap.FromFile(file.FullName);
       UpdateImage(_loadedImage);
     }
@@ -53,13 +54,16 @@ namespace Minecraftize {
     }
 
     private async void MinecraftizeClick(object? _) {
-      _minecraftizedImage = await _minecraftizer.Minecraftize(_loadedImage!, _sliderValue);
+      var minecraftizedImage = await _minecraftizer.Minecraftize(_loadedImage!, _sliderValue);
+      _minecraftizedImage?.Dispose();
+      _minecraftizedImage = minecraftizedImage;
       UpdateImage(_minecraftizedImage);
     }
 
     private void ChooseImage(object? _) {
       string? filename = DialogsManager.ShowChooseImageDialog();
       if (filename is null) return;
+      _loadedImage?.Dispose();
       _loadedImage = (Bitmap)Bitmap.FromFile(filename);
       UpdateImage(_loadedImage);
     }

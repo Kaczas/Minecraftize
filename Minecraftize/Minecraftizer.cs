@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,8 @@ namespace Minecraftize {
     private FastBitmap _fastSourceBitmap;
     private FastBitmap _finalImage;
 
+    private FastBitmap _squareBitmap;
+
     public Minecraftizer(ColorManager colorManager) {
 
       _colorManager = colorManager;
@@ -31,6 +34,7 @@ namespace Minecraftize {
 #endif
 
       _squareSize = squareSize;
+      _squareBitmap = new FastBitmap(squareSize, squareSize);
       _horizontalSquaresCount = sourceBitmap.Width / squareSize;
       _verticalSquaresCount = sourceBitmap.Height / squareSize;
 
@@ -39,6 +43,7 @@ namespace Minecraftize {
 
       await Parallel.ForEachAsync(
         Partitioner.Create(0, _verticalSquaresCount * _horizontalSquaresCount, 1_000_000).GetDynamicPartitions(),
+        new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
         MinecraftizeAsync
         );
 
@@ -46,6 +51,8 @@ namespace Minecraftize {
       timer.Stop();
       Debug.WriteLine($"Minecraftized image in {timer.Elapsed.TotalSeconds} seconds");
 #endif
+
+      _squareBitmap.Dispose();
 
       return _finalImage.BaseBitmap;
 
@@ -58,23 +65,51 @@ namespace Minecraftize {
         int x = (i % _horizontalSquaresCount) * _squareSize;
         int y = (i / _horizontalSquaresCount) * _squareSize;
 
-        var squareBitmap = new FastBitmap(_squareSize, _squareSize);
+        _fastSourceBitmap.CopyTo(_squareBitmap, x, y, _squareSize, _squareSize);
 
-        _fastSourceBitmap.CopyTo(squareBitmap, x, y, _squareSize, _squareSize);
+        var avgBitmap = _colorManager.MinecraftizeBitmap(_squareBitmap);
 
-        var avgBitmap = _colorManager.MinecraftizeBitmap(squareBitmap);
+        WriteIconOnFinalImage(avgBitmap, x, y);
 
-        squareBitmap.Dispose();
-
-        var icon = new FastBitmap(avgBitmap);
-
-        icon.CopyTo(_finalImage, x, y, 0, 0, _squareSize, _squareSize);
-
-        icon.Dispose();
+        //using var icon = new FastBitmap(avgBitmap);
+        //icon.CopyTo(_finalImage, x, y, 0, 0, _squareSize, _squareSize);
 
       }
 
       return ValueTask.CompletedTask;
+
+    }
+
+    private async void WriteIconOnFinalImage(Bitmap icon, int x, int y) {
+
+      BitmapData bmpData = icon.LockBits(new Rectangle(0, 0, icon.Width, icon.Height),
+                                         ImageLockMode.ReadOnly,
+                                         icon.PixelFormat);
+
+      IntPtr ptr = bmpData.Scan0;
+      int bytesPerPixel = Image.GetPixelFormatSize(icon.PixelFormat) / 8;
+      int stride = bmpData.Stride;
+      int width = icon.Width;
+      int height = icon.Height;
+
+      unsafe {
+        for (int iconY = 0; iconY < height; iconY++) {
+          byte* row = (byte*)ptr + (iconY * stride);
+          for (int iconX = 0; iconX < width; iconX++) {
+            byte* pixel = row + (iconX * bytesPerPixel);
+            byte blue = pixel[0];
+            byte green = pixel[1];
+            byte red = pixel[2];
+            byte alpha = bytesPerPixel == 4 ? pixel[3] : (byte)255;
+            var color = Color.FromArgb(red, green, blue);
+            _finalImage.Set(x + iconX, y + iconY, color);
+          }
+        }
+      }
+
+      icon.UnlockBits(bmpData);
+
+      icon.Dispose();
 
     }
 
